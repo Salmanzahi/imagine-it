@@ -139,7 +139,7 @@ export default function Create() {
             <FieldDescription>Tulis Prompt Mu !</FieldDescription>
             <Textarea placeholder="Buatkan saya game tentang simulasi menjadi presiden" className="" value={textField} onChange={(e) => setTextField(e.target.value)} disabled={textFieldDisabled} />
           </Field>
-          <Button variant='ghost' onClick={handlePrompt} disabled={promptBtnDisabled} className='mt-2 text-white '> <StarsIcon/>Bantu ngeprompt dong ! {promptBtnDisabled && <Spinner />}</Button>
+          <Button variant='ghost' onClick={handlePrompt} disabled={promptBtnDisabled} className='mt-2 dark:text-white text-black '> <StarsIcon/>Bantu ngeprompt dong ! {promptBtnDisabled && <Spinner />}</Button>
           <Field className='mt-4'>
             <FieldLabel>Kasih Foto (Optional)</FieldLabel>
             <FieldDescription>Upload foto biar tambil di web juga !</FieldDescription>

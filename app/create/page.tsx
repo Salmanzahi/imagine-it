@@ -14,12 +14,13 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { generateAi, enhancePrompt} from "./submitHandling";
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner";
+import { StarsIcon } from "lucide-react";
 import { Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@/components/ui/item";
 // import { retrieveDocs
 //  } from "./submitHandling";
@@ -28,26 +29,59 @@ export default function Create() {
   const [mode, setMode] = useState('gemini-2.5-flash')
   const [btnDisabled, setBtnDisabled] = useState(false)
   const [promptBtnDisabled, setPromptBtnDisabled] = useState(false)
+  const[textFieldDisabled, setTextFieldDisabled] = useState(false)
+  const [useUrlMode, setUseUrlMode ] = useState('none')
+  const [url, setUrl] = useState('')
 
 
   // const router = useRouter();
 
   const handleGenerate = async () => {
     try {
+      const urlstate = useUrlMode === 'pic-url' ? true:false
+      const checkurl = urlstate && !url ? true: false
+      if(!textField || checkurl){
+        // const errorReason = {
+        //   textField
+        // }
+        toast.error('km blm input prompt mu ATAU km blm input url foto !', {
+          position: 'top-center'
+        })
+        return;
+      }
+
+      // if(urlstate){
+      //   if(!url){
+      //     toast.error('km belum input foto !', {
+      //       position: 'top-center'
+      //     })
+      //     return;
+      //   }
+      // }
       setBtnDisabled(true)
-      await generateAi(textField, mode)
-      const toastId = toast.success(`Code Generated Successfully,\nTo see the result please back to home !`, {
-        action: (
-          <Button variant="ghost" size="sm" onClick={() => { toast.dismiss(toastId); window.location.href = '/' }}>
-            <ArrowLeft className="h-4 w-4" /> <p>
-              Back
-            </p>
+      const imagePrompt = urlstate ? `Also give this image to be shown  ${url} ` : ''
+      const input = {
+        prompt: `${textField} ${imagePrompt}`,
+        mode: mode,
+      }
+      const res = await generateAi(input.prompt, input.mode)
+      if (res.status){
+        const toastId = toast.success(`Code Generated Successfully,\nTo see the result please back to home !`, {
+          action: (
+            <Button variant="ghost" size="sm" onClick={() => { toast.dismiss(toastId); window.location.href = '/' }}>
+              <ArrowLeft className="h-4 w-4" /> <p>
+                Back
+              </p>
           </Button>
         ),
         position: 'top-center'
       })
+    } else {
+      toast.error("Failed to Generate Code:  Backend Error")
+      console.log(res.errorstack)
+    }
     } catch (e) {
-      toast.error("Failed to Generate Code: " + e)
+      toast.error("Failed to Generate Code: Client Error" + e)
     } finally {
       setBtnDisabled(false)
     }
@@ -55,14 +89,26 @@ export default function Create() {
 
   const handlePrompt = async () => {
     try {
+
       setPromptBtnDisabled(true)
+      setTextFieldDisabled(true)
       const prompt = await enhancePrompt(textField)
-      setTextField(prompt as string)
-      toast.success("Prompt Enhanced Successfully")
+      // check internal
+      if (prompt.status) {
+        setTextField(prompt.output as string)
+        toast.success("Prompt Enhanced Successfully")
+
+      } else {
+        toast.error(`Internal backend error !`)
+        console.log(prompt.output)
+      }
+      
     } catch (e){
       toast.error("Failed to Enhance Prompt: " + e)
+  
     } finally {
       setPromptBtnDisabled(false)
+      setTextFieldDisabled(false)
     }
   }
 
@@ -91,11 +137,28 @@ export default function Create() {
           <Field>
             <FieldLabel>Prompt</FieldLabel>
             <FieldDescription>Tulis Prompt Mu !</FieldDescription>
-            <Textarea placeholder="Buatkan saya game tentang simulasi menjadi presiden" className="" value={textField} onChange={(e) => setTextField(e.target.value)} />
-            
-              
+            <Textarea placeholder="Buatkan saya game tentang simulasi menjadi presiden" className="" value={textField} onChange={(e) => setTextField(e.target.value)} disabled={textFieldDisabled} />
           </Field>
-          <Button variant='secondary' onClick={handlePrompt} disabled={promptBtnDisabled} className='mt-2'>Bantu ngeprompt wok {promptBtnDisabled && <Spinner />}</Button>
+          <Button variant='ghost' onClick={handlePrompt} disabled={promptBtnDisabled} className='mt-2 text-white '> <StarsIcon/>Bantu ngeprompt dong ! {promptBtnDisabled && <Spinner />}</Button>
+          <Field className='mt-4'>
+            <FieldLabel>Kasih Foto (Optional)</FieldLabel>
+            <FieldDescription>Upload foto biar tambil di web juga !</FieldDescription>
+            <Select value={useUrlMode} onValueChange={(e) => setUseUrlMode(e)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Gk pake gambar</SelectItem>
+                <SelectSeparator></SelectSeparator>
+                <SelectItem value="pic-url">Pake Link Url</SelectItem>
+                <SelectItem value="pic-upload" disabled={true} >Upload Gambar (Coming Soon)</SelectItem>
+              </SelectContent>
+              {useUrlMode === 'pic-url' && (
+                  <Input placeholder="Contoh: https://prabogo.com/sawit.jpg" value={url} onChange={(e) => setUrl(e.target.value)} />
+              )}
+            </Select>
+          </Field>
+          
           <Field className="mt-4">
             <FieldLabel>Mode AI</FieldLabel>
             <FieldDescription>Pilih Mode AI !</FieldDescription>
@@ -104,6 +167,7 @@ export default function Create() {
                 <SelectValue placeholder="Select a mode" />
               </SelectTrigger>
               <SelectContent>
+        
                 <SelectItem value="gemini-2.5-flash">Advanced Model</SelectItem>
                 <SelectItem value="gemini-2.5-flash-lite">Fast Model</SelectItem>
               </SelectContent>
@@ -112,7 +176,7 @@ export default function Create() {
 
         </CardContent>
         <CardFooter className=" justify-center">
-          <Button className="w-full" type='submit' onClick={handleGenerate} disabled={btnDisabled} >Generate {btnDisabled && <Spinner />}</Button>
+          <Button className="w-full text-white" variant='secondary'  type='submit' onClick={handleGenerate} disabled={btnDisabled} >Generate ! {btnDisabled && <Spinner />}</Button>
         </CardFooter>
       </Card>
     </div>

@@ -9,7 +9,9 @@ import { genai } from '@/services/gemini'
 
 export async function generateAi(prompt: string, mode: string){
 
-    const res = genai.getGenerativeModel({model: mode})
+
+    try {
+        const res = genai.getGenerativeModel({model: mode})
     const text = await res.generateContent(`
 
         ### ROLE: Pure HTML Generator
@@ -31,6 +33,14 @@ YOU MUST FOLLOW THIS THEME ${prompt}
     const response = text.response.text()
     console.log(response)
     pushDB(response)
+    return { status: true} 
+
+    } catch (e){
+        console.log(e)
+        return { errorstack: e, status: false}
+    }
+
+    
 
 }
 
@@ -49,27 +59,89 @@ export async function enhancePrompt (prompt: string){
     try {
      const res = genai.getGenerativeModel({model: 'gemini-2.5-flash'})
     const text = await res.generateContent(`
-     ### ROLE
-You are an expert Prompt Engineer. Your goal is to transform a vague or simple user prompt into a high-quality, structured, and context-rich prompt that yields professional-grade results from any LLM.
+   ### ROLE
+You are a senior Prompt Engineer specializing in optimizing prompts for large language models (LLMs).  
+Your responsibility is to transform vague, short, or poorly structured user prompts into highly effective, precise, and context-rich prompts that produce expert-level outputs.
 
-### INSTRUCTIONS
-1. **Analyze Intent:** Determine what the user is actually trying to achieve (e.g., creative writing, technical coding, strategic planning).
-2. **Add Structure:** Organize the enhanced prompt using clear headers (Role, Context, Task, Constraints, Output Format).
-3. **Inject Specificity:** Replace vague words with precise verbs and detailed requirements.
-4. **Define Persona:** Assign the AI a specific expert persona relevant to the task.
-5. **Establish Constraints:** Define what the AI should *avoid* doing to ensure high-quality output.
+---
 
-### OUTPUT STRUCTURE
-Provide the enhanced prompt inside a clear block so the user can easily copy it.
+### OBJECTIVE
+Rewrite the user's prompt so that any advanced LLM can clearly understand the intent, context, constraints, and expected output format.
 
-### INPUT PROMPT
-${prompt}
+The enhanced prompt must be significantly clearer, more structured, and more actionable than the original.
+
+---
+
+### PROCESS
+
+Follow these steps internally before generating the enhanced prompt:
+
+1. **Identify the Core Intent**
+   Determine the user's primary objective.  
+   Classify the task type if possible (e.g., coding, explanation, research, strategy, writing, analysis).
+
+2. **Infer Missing Context**
+   If the user prompt lacks context, infer reasonable assumptions to make the prompt usable.
+
+3. **Add Expert Persona**
+   Assign a suitable expert role to the AI that matches the task domain  
+   (e.g., software engineer, data scientist, historian, technical writer).
+
+4. **Clarify the Task**
+   Rewrite the user's request using precise verbs and well-defined goals.
+
+5. **Add Constraints**
+   Specify rules that guide the output quality, such as:
+   - depth of explanation
+   - style
+   - accuracy requirements
+   - things to avoid
+
+6. **Define Output Structure**
+   Clearly define the format the AI should follow (bullet points, code blocks, step-by-step explanation, tables, etc).
+
+---
+
+### PROMPT STRUCTURE
+
+The enhanced prompt MUST use the following structure:
+
+Role:
+Define the expert persona the AI should adopt.
+
+Context:
+Provide background information and clarify the situation.
+
+Task:
+Describe the exact task the AI must perform.
+
+Constraints:
+Define rules, boundaries, or things to avoid.
+
+Output Format:
+Specify exactly how the answer should be structured.
+
+---
+
+### OUTPUT REQUIREMENTS
+
+- Do NOT answer the user's request.
+- ONLY produce the improved prompt.
+- Keep the prompt concise but highly informative.
+- Ensure the prompt is suitable for use with any advanced LLM.
+
+---
+
+### OUTPUT FORMAT
+
+Return the enhanced prompt inside a copyable block: ${prompt}
+
         `)
     const parseres = text.response.text()
-    return parseres
+    return {output: parseres, status: true}
     } catch (e) {
         console.log(e)
-        return e
+        return {output: e, status: false}
     }
    
 }

@@ -43,3 +43,33 @@ async function pushDB(response: string){
 
 }
 
+
+
+export async function enhancePrompt (prompt: string){
+    try {
+     const res = genai.getGenerativeModel({model: 'gemini-2.5-flash'})
+    const text = await res.generateContent(`
+     ### ROLE
+You are an expert Prompt Engineer. Your goal is to transform a vague or simple user prompt into a high-quality, structured, and context-rich prompt that yields professional-grade results from any LLM.
+
+### INSTRUCTIONS
+1. **Analyze Intent:** Determine what the user is actually trying to achieve (e.g., creative writing, technical coding, strategic planning).
+2. **Add Structure:** Organize the enhanced prompt using clear headers (Role, Context, Task, Constraints, Output Format).
+3. **Inject Specificity:** Replace vague words with precise verbs and detailed requirements.
+4. **Define Persona:** Assign the AI a specific expert persona relevant to the task.
+5. **Establish Constraints:** Define what the AI should *avoid* doing to ensure high-quality output.
+
+### OUTPUT STRUCTURE
+Provide the enhanced prompt inside a clear block so the user can easily copy it.
+
+### INPUT PROMPT
+${prompt}
+        `)
+    const parseres = text.response.text()
+    return parseres
+    } catch (e) {
+        console.log(e)
+        return e
+    }
+   
+}

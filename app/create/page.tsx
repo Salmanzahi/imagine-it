@@ -17,7 +17,7 @@ import { ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { generateAi } from "./submitHandling";
+import { generateAi, enhancePrompt} from "./submitHandling";
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner";
 import { Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@/components/ui/item";
@@ -27,9 +27,10 @@ export default function Create() {
   const [textField, setTextField] = useState("");
   const [mode, setMode] = useState('gemini-2.5-flash')
   const [btnDisabled, setBtnDisabled] = useState(false)
+  const [promptBtnDisabled, setPromptBtnDisabled] = useState(false)
 
 
-  const router = useRouter();
+  // const router = useRouter();
 
   const handleGenerate = async () => {
     try {
@@ -49,6 +50,19 @@ export default function Create() {
       toast.error("Failed to Generate Code: " + e)
     } finally {
       setBtnDisabled(false)
+    }
+  }
+
+  const handlePrompt = async () => {
+    try {
+      setPromptBtnDisabled(true)
+      const prompt = await enhancePrompt(textField)
+      setTextField(prompt as string)
+      toast.success("Prompt Enhanced Successfully")
+    } catch (e){
+      toast.error("Failed to Enhance Prompt: " + e)
+    } finally {
+      setPromptBtnDisabled(false)
     }
   }
 
@@ -78,7 +92,10 @@ export default function Create() {
             <FieldLabel>Prompt</FieldLabel>
             <FieldDescription>Tulis Prompt Mu !</FieldDescription>
             <Textarea placeholder="Buatkan saya game tentang simulasi menjadi presiden" className="" value={textField} onChange={(e) => setTextField(e.target.value)} />
+            
+              
           </Field>
+          <Button variant='secondary' onClick={handlePrompt} disabled={promptBtnDisabled} className='mt-2'>Bantu ngeprompt wok {promptBtnDisabled && <Spinner />}</Button>
           <Field className="mt-4">
             <FieldLabel>Mode AI</FieldLabel>
             <FieldDescription>Pilih Mode AI !</FieldDescription>
